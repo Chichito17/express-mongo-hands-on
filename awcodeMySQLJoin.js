@@ -174,11 +174,16 @@ app.get("/", async (req, res) => {
         // Ejecutamos la consulta con INNER JOIN y LEFT JOIN
         const items = await getItemsWithJoins("Today");
         const priorities = await getAllPriorities();
+        // Obtener todas las listas para el desplegable
+        const [allLists] = await pool.query(
+        "SELECT name FROM lists_join ORDER BY name ASC"
+        );
 
         res.render("list", { 
             listTitle: "Today", 
             newListItems: items,
-            priorities: priorities
+            priorities: priorities,
+            allLists:allLists
         });
     } catch (err) {
         console.error("Error en GET /:", err);
@@ -302,11 +307,16 @@ app.get("/:customListName", async (req, res) => {
         } else {
             const items = await getItemsWithJoins(customListName);
             const priorities = await getAllPriorities();
+            // Obtener todas las listas para el desplegable
+            const [allLists] = await pool.query(
+            "SELECT name FROM lists_join ORDER BY name ASC"
+            );
 
             res.render("list", { 
                 listTitle: customListName, 
                 newListItems: items,
-                priorities: priorities
+                priorities: priorities,
+                allLists: allLists
             });
         }
     } catch (err) {
