@@ -4,6 +4,8 @@
 const express = require("express"); // Express framework for handling HTTP requests
 const bodyParser = require("body-parser"); // Middleware to parse the body of HTTP requests
 const mongoose = require("mongoose"); // ODM library for MongoDB
+const dns = require("node:dns");
+dns.setServers(["8.8.8.8"]);
 const _ = require("lodash"); // Utility library for manipulating and working with arrays, numbers, objects, strings, etc.
 
 // Initialize the express application
@@ -18,11 +20,11 @@ app.use(express.static("public"));
 
 // Connect to a MongoDB database named todolistDB with a deprecation fix for the URL parser
 //mongoose.connect("mongodb://localhost:27017/todolistDB", { useNewUrlParser: true });
-//const MONGODB_ATLAS_URI = "mongodb+srv://fjbanezares:Pepito123@cluster0.h5kauwo.mongodb.net/?retryWrites=true&w=majority"
 
 
 
-const MONGODB_ATLAS_URI = "mongodb+srv://fjbanezares:Pepito123@cluster0.n87gd.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
+
+const MONGODB_ATLAS_URI = process.env.MONGODB_URI;
 mongoose.connect(MONGODB_ATLAS_URI, { useNewUrlParser: true, useUnifiedTopology: true });
 
 
@@ -56,13 +58,18 @@ app.get("/", async (req, res) => {
     try {
         // Attempt to find all items in the database
         const foundItems = await Item.find({});
+        const allLists = await List.find({}, "name");
         // If no items found, insert the default items and redirect to the home route
         if (foundItems.length === 0) {
             await Item.insertMany(defaultItems);
             res.redirect("/");
         } else {
             // If items are found, render the 'list' EJS template with the found items
-            res.render("list", { listTitle: "Today", newListItems: foundItems });
+            res.render("list", {
+    listTitle: "Today",
+    newListItems: foundItems,
+    allLists: allLists
+});
         }
     } catch (err) {
         // Log any errors and send a server error response
@@ -80,6 +87,7 @@ app.get("/:customListName", async (req, res) => {
     try {
         // Check if a list with the custom name already exists
         const foundList = await List.findOne({ name: customListName });
+        const allLists = await List.find({}, "name");
         // If not, create a new list with the custom name and default items, then redirect to it
         if (!foundList) {
             const list = new List({
@@ -90,7 +98,11 @@ app.get("/:customListName", async (req, res) => {
             res.redirect("/" + customListName);
         } else {
             // If the list exists, render it with its items
-            res.render("list", { listTitle: foundList.name, newListItems: foundList.items });
+            res.render("list", {
+    listTitle: foundList.name,
+    newListItems: foundList.items,
+    allLists: allLists
+});
         }
     } catch (err) {
         // Log any errors and send a server error response
